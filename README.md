@@ -30,3 +30,7 @@ Then open http://localhost:5173. Run `npm run build` to create a static build in
 ## Built with
 
 React 19, TypeScript, Vite, Tailwind CSS v4, React Router and Lucide icons.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
