@@ -10,6 +10,10 @@ import { deleteRecord, download, importBackup, purgeAll, stamp, toCsv, toJson, u
 import { toast } from '../lib/ui'
 import journalImg from '../assets/images/journal-tea.jpg'
 
+// Keep a young journal quiet: a chart or search over two entries is just clutter.
+const MIN_FOR_TRAPS = 3
+const MIN_FOR_SEARCH = 8
+
 export default function Journal() {
   const records = useRecords()
   const checkIns = useCheckIns()
@@ -19,6 +23,7 @@ export default function Journal() {
   const fileRef = useRef<HTMLInputElement>(null)
 
   const shown = useMemo(() => {
+    if (records.length <= MIN_FOR_SEARCH) return records
     const q = query.trim().toLowerCase()
     return records.filter((r) => {
       if (filter && !r.distortions.includes(filter)) return false
@@ -64,41 +69,6 @@ export default function Journal() {
               : `${records.length} ${records.length === 1 ? 'entry' : 'entries'}, stored only in this browser.`}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            className="btn-quiet"
-            disabled={!records.length}
-            onClick={() => download(`secondlook-journal-${stamp()}.csv`, toCsv(records), 'text/csv;charset=utf-8')}
-            title="A spreadsheet you can share with a therapist"
-          >
-            <Download className="size-4" aria-hidden="true" />
-            CSV
-          </button>
-          <button
-            type="button"
-            className="btn-quiet"
-            disabled={!hasData}
-            onClick={() => download(`secondlook-backup-${stamp()}.json`, toJson(), 'application/json')}
-            title="A full backup you can import later"
-          >
-            <Download className="size-4" aria-hidden="true" />
-            Backup
-          </button>
-          <button type="button" className="btn-quiet" onClick={() => fileRef.current?.click()}>
-            <Upload className="size-4" aria-hidden="true" />
-            Import
-          </button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="application/json,.json"
-            className="sr-only"
-            tabIndex={-1}
-            aria-label="Import a JSON backup"
-            onChange={(e) => onImport(e.target.files?.[0])}
-          />
-        </div>
       </div>
 
       {records.length === 0 ? (
@@ -117,32 +87,36 @@ export default function Journal() {
         </div>
       ) : (
         <>
-          <section className="card mt-8 p-6">
-            <h2 className="mb-4 text-lg">Your thinking traps</h2>
-            <DistortionBar records={records} />
-          </section>
+          {records.length >= MIN_FOR_TRAPS && (
+            <section className="card mt-8 p-6">
+              <h2 className="mb-4 text-lg">Your thinking traps</h2>
+              <DistortionBar records={records} />
+            </section>
+          )}
 
-          <div className="mt-8 flex flex-wrap gap-3">
-            <div className="relative min-w-60 flex-1">
-              <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden="true" />
-              <input
-                type="search"
-                className="field pl-10"
-                placeholder="Search thoughts, reframes, notes"
-                aria-label="Search entries"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
+          {records.length > MIN_FOR_SEARCH && (
+            <div className="mt-8 flex flex-wrap gap-3">
+              <div className="relative min-w-60 flex-1">
+                <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden="true" />
+                <input
+                  type="search"
+                  className="field pl-10"
+                  placeholder="Search thoughts, reframes, notes"
+                  aria-label="Search entries"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+              </div>
+              <select className="field w-auto" aria-label="Filter by thinking trap" value={filter} onChange={(e) => setFilter(e.target.value)}>
+                <option value="">All thinking traps</option>
+                {DISTORTIONS.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
             </div>
-            <select className="field w-auto" aria-label="Filter by thinking trap" value={filter} onChange={(e) => setFilter(e.target.value)}>
-              <option value="">All thinking traps</option>
-              {DISTORTIONS.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          )}
 
           {shown.length === 0 ? (
             <p className="hint mt-6">
@@ -215,19 +189,54 @@ export default function Journal() {
         </>
       )}
 
-      {hasData && (
-        <section className="mt-14 border-t border-line pt-6">
-          <h2 className="text-lg">Your data</h2>
-          <p className="hint mt-1 max-w-xl">
-            Entries and check-ins live only in this browser. Clearing your browser data removes them, so download a backup now
-            and then.
-          </p>
+      <section className="mt-14 border-t border-line pt-6">
+        <h2 className="text-lg">Your data</h2>
+        <p className="hint mt-1 max-w-xl">
+          Entries and check-ins live only in this browser. Clearing your browser data removes them, so download a backup now
+          and then.
+        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            className="btn-quiet"
+            disabled={!records.length}
+            onClick={() => download(`secondlook-journal-${stamp()}.csv`, toCsv(records), 'text/csv;charset=utf-8')}
+            title="A spreadsheet you can share with a therapist"
+          >
+            <Download className="size-4" aria-hidden="true" />
+            CSV
+          </button>
+          <button
+            type="button"
+            className="btn-quiet"
+            disabled={!hasData}
+            onClick={() => download(`secondlook-backup-${stamp()}.json`, toJson(), 'application/json')}
+            title="A full backup you can import later"
+          >
+            <Download className="size-4" aria-hidden="true" />
+            Backup
+          </button>
+          <button type="button" className="btn-quiet" onClick={() => fileRef.current?.click()}>
+            <Upload className="size-4" aria-hidden="true" />
+            Import
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json,.json"
+            className="sr-only"
+            tabIndex={-1}
+            aria-label="Import a JSON backup"
+            onChange={(e) => onImport(e.target.files?.[0])}
+          />
+        </div>
+        {hasData && (
           <button type="button" className="btn-text mt-2 text-danger" onClick={() => setConfirmPurge(true)}>
             <Trash className="size-4" aria-hidden="true" />
             Delete everything
           </button>
-        </section>
-      )}
+        )}
+      </section>
 
       <Dialog
         open={confirmPurge}
