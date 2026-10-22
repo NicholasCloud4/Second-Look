@@ -1,0 +1,12 @@
+{
+  "name": "Second Look",
+  "short_name": "Second Look",
+  "description": "A private CBT thought journal.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8F7F2",
+  "theme_color": "#3D6351",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
