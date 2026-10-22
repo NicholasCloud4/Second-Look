@@ -23,7 +23,7 @@ Vite + React 19 + TypeScript (strict: `noUnusedLocals`, `verbatimModuleSyntax`, 
 - **No AI and no network calls.** The product decision was to remove the AI coach entirely. Don't add fetches, analytics, CDNs or external fonts. Everything a user writes stays in their browser.
 - **Local-first storage only.** All data is in `localStorage` under `secondlook:*` keys. Don't rename keys, because existing users would lose their data.
 - **Treat stored and imported data as untrusted.** Every read goes through `normalizeRecord` / `normalizeCheckIn` in `src/lib/storage.ts`. Add new fields there with defaults, and never assume a field exists.
-- **No seed or fake data.** The journal and the mood chart start empty and show empty states.
+- **No seed or fake data.** The journal and the mood chart start empty and show empty states. The one exception is the dev-only "Load test check-ins" panel on Home (`src/components/DevTestData.tsx`, gated on `import.meta.env.DEV`), which never ships in the production build. Its check-ins have `test-` ids and fixed values, so the chart's averages can be checked by hand.
 - **Don't bias ratings.** Nothing starts preselected (emotions, distortions). Re-rate sliders start at the user's "before" values, never at a lowered default.
 - **Keep the crisis support reachable**: the header Support button, the footer link, and the inline `CrisisNote` that appears when any emotion is rated 90 or higher. Phone numbers in `src/data/prompts.ts` must stay accurate.
 - **No unverifiable claims.** That means no "encrypted" or "HIPAA compliant" wording and no attributed quotes unless the source is verified.

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, BookOpen, PenLine, RefreshCw, Sun, Wind } from 'lucide-react'
+import { DevTestData } from '../components/DevTestData'
 import { DistortionBar } from '../components/DistortionBar'
 import { MoodChart } from '../components/MoodChart'
 import { GROUNDING_NOTES, moodLabel } from '../data/prompts'
@@ -144,6 +145,8 @@ export default function Home() {
           <MoodChart checkIns={checkIns} />
         </section>
       )}
+
+      {import.meta.env.DEV && <DevTestData />}
 
       {/* Practices */}
       <section>

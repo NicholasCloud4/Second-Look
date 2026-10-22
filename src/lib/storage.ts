@@ -154,6 +154,21 @@ export function saveCheckIn(c: CheckIn) {
   checkIns.set([...rest, c].sort((a, b) => a.date.localeCompare(b.date)))
 }
 
+/** Adds check-ins on days that don't have one yet, so a day never ends up with two. Returns how many were added. */
+export function addCheckIns(incoming: CheckIn[]) {
+  const taken = new Set(checkIns.get().map((c) => c.date))
+  const fresh = incoming.filter((c) => !taken.has(c.date) && !!taken.add(c.date))
+  return checkIns.merge(fresh, (a, b) => a.date.localeCompare(b.date))
+}
+
+/** Removes check-ins whose id starts with the prefix. Returns how many were removed. */
+export function removeCheckIns(idPrefix: string) {
+  const before = checkIns.get()
+  const kept = before.filter((c) => !c.id.startsWith(idPrefix))
+  if (kept.length !== before.length) checkIns.set(kept)
+  return before.length - kept.length
+}
+
 /** Today's date in the user's own time zone, as YYYY-MM-DD. */
 export function localDay(d = new Date()) {
   const p = (n: number) => String(n).padStart(2, '0')
@@ -189,10 +204,7 @@ export function importBackup(text: string) {
       recs.map(normalizeRecord).filter((r): r is ThoughtRecord => r !== null),
       (a, b) => b.timestamp.localeCompare(a.timestamp),
     ),
-    checkIns: checkIns.merge(
-      cis.map(normalizeCheckIn).filter((c): c is CheckIn => c !== null),
-      (a, b) => a.date.localeCompare(b.date),
-    ),
+    checkIns: addCheckIns(cis.map(normalizeCheckIn).filter((c): c is CheckIn => c !== null)),
   }
 }
 
