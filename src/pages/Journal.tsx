@@ -1,12 +1,13 @@
 import { useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronDown, Download, Search, Sparkles, Trash, Upload } from 'lucide-react'
+import { ChevronDown, Download, FileText, Search, Sparkles, Trash, Upload } from 'lucide-react'
 import { Dialog } from '../components/Dialog'
 import { DistortionBar } from '../components/DistortionBar'
 import { ShiftMeter } from '../components/ShiftMeter'
 import { DISTORTIONS, distortionName } from '../data/distortions'
 import { formatDate, meta, reliefLabel } from '../lib/metrics'
-import { deleteRecord, download, importBackup, purgeAll, stamp, toCsv, toJson, useCheckIns, useRecords } from '../lib/storage'
+import { deleteRecord, download, importBackup, purgeAll, stamp, toJson, useCheckIns, useRecords } from '../lib/storage'
+import { printReport } from '../lib/report'
 import { toast } from '../lib/ui'
 import journalImg from '../assets/images/journal-tea.jpg'
 
@@ -200,11 +201,15 @@ export default function Journal() {
             type="button"
             className="btn-quiet"
             disabled={!records.length}
-            onClick={() => download(`secondlook-journal-${stamp()}.csv`, toCsv(records), 'text/csv;charset=utf-8')}
-            title="A spreadsheet you can share with a therapist"
+            onClick={() => {
+              void printReport(records).then((ok) => {
+                if (!ok) toast('Could not open the print view in this browser.')
+              })
+            }}
+            title="A printable report to share with your doctor. Choose Save as PDF in the print window."
           >
-            <Download className="size-4" aria-hidden="true" />
-            CSV
+            <FileText className="size-4" aria-hidden="true" />
+            PDF for doctor
           </button>
           <button
             type="button"
