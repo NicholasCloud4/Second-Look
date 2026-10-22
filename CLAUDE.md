@@ -35,7 +35,7 @@ src/
   App.tsx              routes: / /studio /journal /breathe /codex
   types.ts             ThoughtRecord, CheckIn, DistortionDefinition
   data/                static content: distortions (+ quiz scenarios), prompts, crisis lines, breathing patterns
-  lib/storage.ts       persisted list stores (useSyncExternalStore), import/export, CSV, draft key
+  lib/storage.ts       persisted list stores (useSyncExternalStore), import/export, CSV, draft key, backup reminder (`secondlook:backup`), persistent-storage request
   lib/ui.ts            in-memory app state: which dialog is open, toasts
   lib/metrics.ts       relief %, distortion counts, date formatting, `meta()` interpunct joiner
   lib/audio.ts         Web Audio singing-bowl tone (opt-in only)

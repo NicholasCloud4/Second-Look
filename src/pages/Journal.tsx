@@ -6,7 +6,7 @@ import { DistortionBar } from '../components/DistortionBar'
 import { ShiftMeter } from '../components/ShiftMeter'
 import { DISTORTIONS, distortionName } from '../data/distortions'
 import { formatDate, meta, reliefLabel } from '../lib/metrics'
-import { deleteRecord, download, importBackup, purgeAll, stamp, toJson, useCheckIns, useRecords } from '../lib/storage'
+import { deleteRecord, downloadBackup, importBackup, lastBackup, purgeAll, useCheckIns, useRecords } from '../lib/storage'
 import { printReport } from '../lib/report'
 import { toast } from '../lib/ui'
 import journalImg from '../assets/images/journal-tea.jpg'
@@ -58,6 +58,11 @@ export default function Journal() {
   }
 
   const hasData = records.length > 0 || checkIns.length > 0
+  const [lastSaved, setLastSaved] = useState(lastBackup)
+  const backup = () => {
+    downloadBackup()
+    setLastSaved(lastBackup())
+  }
 
   return (
     <div>
@@ -194,7 +199,7 @@ export default function Journal() {
         <h2 className="text-lg">Your data</h2>
         <p className="hint mt-1 max-w-xl">
           Entries and check-ins live only in this browser. Clearing your browser data removes them, so download a backup now
-          and then.
+          and then.{hasData && (lastSaved ? ` Last backup: ${formatDate(lastSaved)}.` : ' No backup yet.')}
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <button
@@ -215,7 +220,7 @@ export default function Journal() {
             type="button"
             className="btn-quiet"
             disabled={!hasData}
-            onClick={() => download(`secondlook-backup-${stamp()}.json`, toJson(), 'application/json')}
+            onClick={backup}
             title="A full backup you can import later"
           >
             <Download className="size-4" aria-hidden="true" />
@@ -274,7 +279,7 @@ export default function Journal() {
         <button
           type="button"
           className="btn-text mt-2"
-          onClick={() => download(`secondlook-backup-${stamp()}.json`, toJson(), 'application/json')}
+          onClick={backup}
         >
           <Download className="size-4" aria-hidden="true" />
           Download a backup first

@@ -6,6 +6,7 @@ import { reliefPercent } from './metrics'
 const RECORDS_KEY = 'secondlook:records'
 const CHECKINS_KEY = 'secondlook:checkins'
 export const DRAFT_KEY = 'secondlook:draft'
+const BACKUP_KEY = 'secondlook:backup'
 
 // ---------- normalizing untrusted data (storage or imported files) ----------
 
@@ -134,6 +135,7 @@ const checkIns = createListStore(CHECKINS_KEY, normalizeCheckIn)
 export const useRecords = records.use
 
 export function addRecord(r: ThoughtRecord) {
+  keepStorage()
   records.set([r, ...records.get().filter((x) => x.id !== r.id)])
 }
 
@@ -150,6 +152,7 @@ export function deleteRecord(id: string) {
 export const useCheckIns = checkIns.use
 
 export function saveCheckIn(c: CheckIn) {
+  keepStorage()
   const rest = checkIns.get().filter((x) => x.date !== c.date)
   checkIns.set([...rest, c].sort((a, b) => a.date.localeCompare(b.date)))
 }
@@ -199,6 +202,7 @@ export function importBackup(text: string) {
     if (Array.isArray(o.checkIns)) cis = o.checkIns
   }
   if (!recs) throw new Error('This file is not a Second Look backup.')
+  keepStorage()
   return {
     records: records.merge(
       recs.map(normalizeRecord).filter((r): r is ThoughtRecord => r !== null),
@@ -279,3 +283,68 @@ export function download(filename: string, text: string, type: string) {
 }
 
 export const stamp = () => localDay()
+
+// ---------- keeping data safe ----------
+
+let persistAsked = false
+
+/** Asks the browser not to clear our storage on its own. Only once there is something worth keeping, since Firefox asks the user. */
+function keepStorage() {
+  if (persistAsked) return
+  persistAsked = true
+  try {
+    void navigator.storage
+      ?.persisted?.()
+      .then((done) => done || navigator.storage.persist())
+      .catch(() => {})
+  } catch {
+    // Not supported; the backup file is still there.
+  }
+}
+
+interface BackupState {
+  last: string | null // ISO time of the last downloaded backup
+  snoozedUntil: string | null
+}
+
+function readBackupState(): BackupState {
+  try {
+    const o: unknown = JSON.parse(localStorage.getItem(BACKUP_KEY) ?? 'null')
+    const r = (o && typeof o === 'object' ? o : {}) as Record<string, unknown>
+    const time = (v: unknown) => (typeof v === 'string' && Number.isFinite(Date.parse(v)) ? v : null)
+    return { last: time(r.last), snoozedUntil: time(r.snoozedUntil) }
+  } catch {
+    return { last: null, snoozedUntil: null }
+  }
+}
+
+function writeBackupState(s: BackupState) {
+  try {
+    localStorage.setItem(BACKUP_KEY, JSON.stringify(s))
+  } catch {
+    // ignore
+  }
+}
+
+export const lastBackup = () => readBackupState().last
+
+export function downloadBackup() {
+  download(`secondlook-backup-${stamp()}.json`, toJson(), 'application/json')
+  writeBackupState({ last: new Date().toISOString(), snoozedUntil: null })
+}
+
+/** A reminder is due after 10 new or edited items, or a month since the last backup with anything new. */
+export function backupReminder(): { changed: number; last: string | null } | null {
+  const s = readBackupState()
+  const now = Date.now()
+  if (s.snoozedUntil && Date.parse(s.snoozedUntil) > now) return null
+  const since = s.last ? Date.parse(s.last) : 0
+  const after = (iso: string) => Date.parse(iso) > since
+  const changed = records.get().filter((r) => after(r.timestamp)).length + checkIns.get().filter((c) => after(c.timestamp)).length
+  const monthOld = s.last !== null && now - since >= 30 * 864e5
+  return changed >= 10 || (changed > 0 && monthOld) ? { changed, last: s.last } : null
+}
+
+export function snoozeBackupReminder(days = 7) {
+  writeBackupState({ ...readBackupState(), snoozedUntil: new Date(Date.now() + days * 864e5).toISOString() })
+}

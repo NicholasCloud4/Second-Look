@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, BookOpen, PenLine, RefreshCw, Sun, Wind } from 'lucide-react'
+import { BackupReminder } from '../components/BackupReminder'
 import { DevTestData } from '../components/DevTestData'
 import { DistortionBar } from '../components/DistortionBar'
 import { MoodChart } from '../components/MoodChart'
@@ -137,6 +138,8 @@ export default function Home() {
           </button>
         </div>
       </section>
+
+      <BackupReminder />
 
       {/* Mood trend */}
       {checkIns.length > 0 && (
